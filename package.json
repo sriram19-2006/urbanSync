@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "build": "echo Static Vercel demo ready"
+  }
+}

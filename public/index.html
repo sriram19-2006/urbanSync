@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Junction Optimizer</title>
+  <style>
+    :root {
+      --bg: #050a11;
+      --sidebar: #090e17;
+      --panel: #0a111d;
+      --panel-2: #0d1726;
+      --line: rgba(34, 211, 238, 0.22);
+      --cyan: #22d3ee;
+      --green: #34d399;
+      --red: #ef4444;
+      --orange: #fb923c;
+      --text: #f8fbff;
+      --muted: #95a3b7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 42% 0%, rgba(34, 211, 238, 0.13), transparent 28rem),
+        linear-gradient(135deg, #050a11 0%, #07111c 45%, #050a11 100%);
+      letter-spacing: 0;
+    }
+    .shell { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; }
+    aside {
+      background: linear-gradient(180deg, #090e17 0%, #0b111c 100%);
+      border-right: 1px solid rgba(34, 211, 238, 0.14);
+      padding: 4.8rem 1.55rem 1.6rem;
+      box-shadow: 8px 0 28px rgba(0, 0, 0, 0.24);
+    }
+    aside h2 { margin: 0 0 .7rem; font-size: 1.35rem; }
+    .caption, .video-note, .step-label, .muted { color: var(--muted); }
+    .caption { margin-bottom: 1.9rem; }
+    .control-title { font-weight: 800; margin: 1.35rem 0 .6rem; }
+    .select-box {
+      border: 1px solid rgba(34, 211, 238, .45);
+      border-radius: 8px;
+      background: #091521;
+      padding: .68rem .8rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .video-note { font-size: .9rem; line-height: 1.55; margin: 1.35rem 0 2rem; }
+    .divider { height: 1px; background: rgba(148, 163, 184, .16); margin: 0 0 1.35rem; }
+    .step-label { display: flex; justify-content: space-between; align-items: center; font-size: .94rem; }
+    input[type="range"] { width: 100%; accent-color: #ff5c66; margin: .45rem 0 1.35rem; }
+    .buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; }
+    button {
+      min-height: 2rem;
+      border: 1px solid rgba(34, 211, 238, .2);
+      border-radius: 7px;
+      color: #d9e6f7;
+      background: rgba(10, 16, 26, .65);
+      font-weight: 750;
+      cursor: pointer;
+    }
+    button.primary {
+      color: #ecfeff;
+      background: linear-gradient(90deg, rgba(52, 211, 153, .28), rgba(34, 211, 238, .24));
+      border-color: rgba(34, 211, 238, .48);
+      box-shadow: 0 0 14px rgba(34, 211, 238, .12);
+    }
+    main { max-width: 930px; padding: 4.7rem 2.1rem 3rem; }
+    .kicker {
+      color: var(--green);
+      text-transform: uppercase;
+      font-size: .82rem;
+      font-weight: 900;
+      letter-spacing: .08em;
+      margin-bottom: 1.7rem;
+    }
+    h1 { margin: 0; font-size: clamp(2.6rem, 5vw, 3.4rem); line-height: 1.05; }
+    .hero p { color: #b7d5f4; font-size: 1.08rem; line-height: 1.6; max-width: 720px; margin: 1.4rem 0 1.5rem; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.1rem; margin-bottom: 1.05rem; }
+    .metric-card {
+      position: relative;
+      min-height: 112px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(17, 26, 40, .98), rgba(9, 15, 25, .98));
+      padding: 1.15rem 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 0 22px rgba(34, 211, 238, .06);
+    }
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 2px;
+      background: var(--accent, var(--cyan));
+      opacity: .68;
+    }
+    .metric-label {
+      color: #a6bdd7;
+      text-transform: uppercase;
+      font-size: .78rem;
+      font-weight: 900;
+      line-height: 1.7;
+      margin-bottom: .65rem;
+    }
+    .metric-value { font-size: 1.9rem; line-height: 1; font-weight: 900; text-shadow: 0 3px 0 rgba(0,0,0,.45); }
+    .pill { display: flex; gap: .45rem; align-items: center; margin-top: .72rem; font-size: .86rem; font-weight: 900; }
+    .dot { width: .82rem; height: .82rem; border-radius: 50%; background: var(--dot, var(--green)); box-shadow: 0 0 11px var(--dot, var(--green)); }
+    .status-banner {
+      border-radius: 8px;
+      padding: .95rem 1rem;
+      margin: .95rem 0 1.35rem;
+      font-weight: 900;
+      line-height: 1.5;
+    }
+    .normal-banner {
+      color: #bbf7d0;
+      background: linear-gradient(90deg, rgba(20, 83, 45, .78), rgba(5, 21, 25, .76));
+      border: 1px solid rgba(52, 211, 153, .42);
+    }
+    .emergency-banner {
+      color: #fee2e2;
+      background: linear-gradient(90deg, rgba(127, 29, 29, .96), rgba(69, 10, 10, .88));
+      border: 1px solid rgba(248, 113, 113, .82);
+      box-shadow: 0 0 28px rgba(239, 68, 68, .18);
+    }
+    .dashboard-grid { display: grid; grid-template-columns: 1.05fr 1.35fr .95fr; gap: 1.35rem; align-items: start; }
+    .decision-row {
+      grid-column: 1 / 3;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: stretch;
+      margin-top: .15rem;
+    }
+    .section-heading {
+      margin: 0 0 .85rem;
+      text-transform: uppercase;
+      font-size: 1.08rem;
+      line-height: 1.18;
+      font-weight: 950;
+      color: var(--text);
+    }
+    .section-heading.primary { color: var(--cyan); text-shadow: 0 0 16px rgba(34, 211, 238, .22); }
+    .section-heading::after {
+      content: "";
+      display: block;
+      width: 42px;
+      height: 2px;
+      margin-top: .55rem;
+      background: linear-gradient(90deg, var(--cyan), transparent);
+    }
+    img { display: block; width: 100%; border-radius: 7px; border: 1px solid rgba(34, 211, 238, .24); }
+    .ai-monitor {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(52, 211, 153, .5);
+      border-radius: 9px;
+      background:
+        linear-gradient(180deg, rgba(7, 13, 23, .74), rgba(3, 8, 14, .92)),
+        repeating-linear-gradient(0deg, rgba(34, 211, 238, .04) 0 1px, transparent 1px 22px);
+      padding: .55rem;
+      box-shadow: 0 0 28px rgba(52, 211, 153, .12), inset 0 0 28px rgba(34, 211, 238, .06);
+    }
+    .monitor-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .8rem;
+      color: #a7f3d0;
+      font-size: .68rem;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin: 0 .15rem .45rem;
+    }
+    .monitor-status { display: flex; align-items: center; gap: .35rem; color: #c7f9e5; }
+    .monitor-status::before {
+      content: "";
+      width: .46rem;
+      height: .46rem;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+    }
+    .ai-image {
+      border-color: rgba(52, 211, 153, .38);
+      box-shadow: none;
+      background: #050a11;
+    }
+    .monitor-strip {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: .25rem;
+      margin-top: .48rem;
+    }
+    .monitor-strip span {
+      height: .18rem;
+      border-radius: 99px;
+      background: linear-gradient(90deg, rgba(52, 211, 153, .9), rgba(34, 211, 238, .7));
+      opacity: .52;
+    }
+    .small-note { color: var(--muted); line-height: 1.6; margin-top: .8rem; }
+    .lane-row { margin: 0 0 .86rem; }
+    .lane-top { display: flex; justify-content: space-between; gap: .7rem; line-height: 1.55; color: #bfd2e8; }
+    .lane-top strong { color: #fff; }
+    .lane-top.active strong { color: var(--green); }
+    .bar { height: .45rem; background: #202b3d; border-radius: 999px; overflow: hidden; }
+    .bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan)); border-radius: inherit; }
+    .signal-card, .recommend-card, .overview, .chart-card {
+      border: 1px solid rgba(34, 211, 238, .18);
+      border-radius: 8px;
+      background: rgba(10, 17, 29, .78);
+      padding: 1rem;
+      color: #bad0e8;
+      line-height: 1.55;
+    }
+    .signal-card strong, .recommend-card strong, .overview strong { color: #fff; }
+    .recommend-card {
+      border-color: rgba(52, 211, 153, .3);
+      background: linear-gradient(135deg, rgba(6, 78, 59, .28), rgba(8, 15, 26, .84));
+      box-shadow: inset 2px 0 0 rgba(52, 211, 153, .76);
+    }
+    .recommend-card .recommend-label {
+      color: var(--green);
+      text-transform: uppercase;
+      font-size: .72rem;
+      font-weight: 950;
+      letter-spacing: .05em;
+      margin-bottom: .35rem;
+    }
+    .recommend-card .recommend-main { color: #e8fff7; font-weight: 900; }
+    .recommend-card .recommend-sub { color: #9fb3c8; font-size: .86rem; margin-top: .28rem; }
+    .compact { margin-top: 1.35rem; font-size: .94rem; }
+    .charts { margin-top: 2.2rem; }
+    .comparison-panel {
+      border: 1px solid rgba(34, 211, 238, .2);
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(13, 23, 38, .86), rgba(5, 10, 17, .92)),
+        repeating-linear-gradient(90deg, rgba(34, 211, 238, .05) 0 1px, transparent 1px 68px);
+      padding: 1rem;
+      box-shadow: 0 16px 46px rgba(0, 0, 0, .25);
+    }
+    .comparison-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; margin-bottom: 1rem; }
+    .insight-card {
+      border: 1px solid rgba(34, 211, 238, .16);
+      border-radius: 7px;
+      background: rgba(7, 13, 23, .74);
+      padding: .78rem .9rem;
+    }
+    .insight-card span { display: block; color: var(--muted); text-transform: uppercase; font-size: .72rem; font-weight: 900; margin-bottom: .3rem; }
+    .insight-card strong { display: block; font-size: 1.18rem; }
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .chart-card {
+      border: 1px solid rgba(34, 211, 238, .18);
+      border-radius: 8px;
+      background: rgba(7, 13, 23, .74);
+      padding: 1rem;
+      color: #bad0e8;
+      line-height: 1.55;
+      min-height: 250px;
+    }
+    .chart-title { display: flex; justify-content: space-between; gap: 1rem; color: #fff; font-weight: 900; margin-bottom: .85rem; }
+    .chart-title span { color: var(--muted); font-size: .78rem; text-transform: uppercase; }
+    .hbar-row { margin: 1rem 0; }
+    .hbar-top { display: flex; justify-content: space-between; color: #dbeafe; font-weight: 800; font-size: .88rem; margin-bottom: .4rem; }
+    .hbar-track { height: .78rem; border-radius: 999px; background: #182233; overflow: hidden; border: 1px solid rgba(148, 163, 184, .12); }
+    .hbar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--green), var(--cyan)); box-shadow: 0 0 14px rgba(34, 211, 238, .22); }
+    .hbar-fill.fixed { background: linear-gradient(90deg, #4f6075, var(--cyan)); }
+    svg { width: 100%; height: 180px; display: block; }
+    .axis { stroke: rgba(148, 163, 184, .2); stroke-width: 1; }
+    .line-ai { stroke: var(--green); stroke-width: 3; fill: none; filter: drop-shadow(0 0 4px rgba(52, 211, 153, .25)); }
+    .line-fixed { stroke: var(--cyan); stroke-width: 3; fill: none; filter: drop-shadow(0 0 4px rgba(34, 211, 238, .25)); }
+    .legend { display: flex; gap: .9rem; flex-wrap: wrap; color: #fff; font-weight: 750; font-size: .88rem; margin-bottom: .6rem; }
+    .legend span::before { content: ""; display: inline-block; width: .75rem; height: .75rem; border-radius: 50%; margin-right: .35rem; vertical-align: -1px; background: var(--legend); }
+    details.overview { margin-top: 1.4rem; }
+    .overview summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      color: #d7e8ff;
+      font-size: 1.05rem;
+      font-weight: 900;
+    }
+    .overview summary::-webkit-details-marker { display: none; }
+    .overview summary span { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+    .overview summary::after {
+      content: "⌄";
+      color: var(--cyan);
+      font-size: 1.2rem;
+      transition: transform .18s ease;
+    }
+    .overview[open] summary::after { transform: rotate(180deg); }
+    .overview-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: .8rem; }
+    .overview-item { border-left: 2px solid var(--cyan); padding-left: .75rem; min-height: 58px; }
+    .overview-item span { display: block; color: var(--muted); font-size: .78rem; text-transform: uppercase; font-weight: 900; margin-bottom: .25rem; }
+    @media (max-width: 720px) {
+      .shell { grid-template-columns: 1fr; }
+      aside { padding: 1.2rem; position: static; }
+      main { padding: 2rem 1rem; }
+    }
+    @media (max-width: 720px) {
+      .metrics, .dashboard-grid, .chart-grid, .overview-grid, .decision-row { grid-template-columns: 1fr; }
+      .decision-row { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <h2>AI Junction Optimizer</h2>
+      <div class="caption">Hackathon demo control</div>
+
+      <div class="control-title">Traffic video</div>
+      <div class="select-box">demo_traffic_video.mp4</div>
+      <div class="video-note">Using demo_traffic_video.mp4: 640x360, 37s. The live preview samples this video during the demo.</div>
+
+      <div class="divider"></div>
+      <div class="step-label"><strong>Inspection mode</strong><span id="stepText">Step 7</span></div>
+      <input id="stepRange" type="range" min="0" max="15" value="6" aria-label="Inspection mode">
+      <div class="buttons">
+        <button id="prevBtn">Prev</button>
+        <button class="primary" id="nextBtn">Next</button>
+        <button id="restartBtn">Restart</button>
+      </div>
+    </aside>
+
+    <main>
+      <section class="hero">
+        <div class="kicker">Smart-city traffic command center</div>
+        <h1>AI Junction Optimizer</h1>
+        <p>Adaptive signal control with YOLOv8 vehicle detection and emergency green corridor.</p>
+      </section>
+
+      <section class="metrics">
+        <div class="metric-card" style="--accent:var(--green);">
+          <div class="metric-label">Current green</div>
+          <div class="metric-value" id="greenMetric">East</div>
+        </div>
+        <div class="metric-card" style="--accent:var(--cyan);">
+          <div class="metric-label">Green duration</div>
+          <div class="metric-value" id="durationMetric">50s</div>
+        </div>
+        <div class="metric-card" style="--accent:var(--orange);">
+          <div class="metric-label">Congestion</div>
+          <div class="metric-value" id="congestionMetric">High</div>
+          <div class="pill"><span class="dot" id="congestionDot"></span><span id="congestionPill">High</span></div>
+        </div>
+        <div class="metric-card" style="--accent:var(--cyan);">
+          <div class="metric-label">Wait saved</div>
+          <div class="metric-value">525</div>
+        </div>
+      </section>
+
+      <div class="status-banner emergency-banner" id="statusBanner">Emergency corridor active: ambulance lane has priority.</div>
+
+      <section class="dashboard-grid">
+        <div>
+          <h2 class="section-heading">Traffic Video Input</h2>
+          <img id="trafficImage" src="assets/traffic-step-07.jpg" alt="YOLO vehicle detection frame">
+          <div class="small-note" id="detectedText">Detected 28 vehicles in this frame.</div>
+        </div>
+        <div>
+          <h2 class="section-heading primary">AI Junction Output</h2>
+          <div class="ai-monitor">
+            <div class="monitor-top">
+              <span>Adaptive Signal Model</span>
+              <span class="monitor-status">Live decision</span>
+            </div>
+            <img class="ai-image" id="aiImage" src="assets/ai-step-07.jpg" alt="AI junction output">
+            <div class="monitor-strip" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 class="section-heading">Lane Vehicle Counts</h2>
+          <div id="laneRows"></div>
+        </div>
+        <div class="decision-row">
+          <div>
+            <h2 class="section-heading compact">Signal Decision</h2>
+          <div class="signal-card" id="decisionText"></div>
+          </div>
+          <div class="recommend-card">
+            <div class="recommend-label">Smart Lane Recommendation</div>
+            <div class="recommend-main" id="recommendMain">Recommended Lane: NORTH</div>
+            <div class="recommend-sub" id="recommendSub">Lowest traffic density detected</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="charts">
+        <h2 class="section-heading">Fixed Timer vs AI Timer</h2>
+        <div class="comparison-panel">
+          <div class="comparison-top">
+            <div class="insight-card"><span>AI Queue</span><strong id="aiQueueStat">28 vehicles</strong></div>
+            <div class="insight-card"><span>Fixed Queue</span><strong id="fixedQueueStat">69 vehicles</strong></div>
+            <div class="insight-card"><span>Current Gain</span><strong id="gainStat">75 units saved</strong></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div class="chart-title"><strong>Queue Pressure</strong><span>lower is better</span></div>
+              <div class="hbar-row">
+                <div class="hbar-top"><span>AI adaptive timer</span><strong id="aiQueueBarText">28</strong></div>
+                <div class="hbar-track"><div class="hbar-fill" id="aiQueueBar" style="width:42%"></div></div>
+              </div>
+              <div class="hbar-row">
+                <div class="hbar-top"><span>Fixed timer</span><strong id="fixedQueueBarText">69</strong></div>
+                <div class="hbar-track"><div class="hbar-fill fixed" id="fixedQueueBar" style="width:100%"></div></div>
+              </div>
+              <div class="small-note" id="queueInsight">AI keeps the active queue lower while clearing the emergency lane.</div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title"><strong>Cumulative Wait Trend</strong><span>demo timeline</span></div>
+            <div class="legend">
+                <span style="--legend:var(--green);">AI timer</span>
+                <span style="--legend:var(--cyan);">Fixed timer</span>
+            </div>
+              <svg viewBox="0 0 320 190" role="img" aria-label="AI and fixed wait comparison line chart">
+                <path class="axis" d="M25 152H300M25 105H300M25 58H300M70 24V160M150 24V160M230 24V160"/>
+                <path class="line-ai" id="aiWaitLine" d=""/>
+                <path class="line-fixed" id="fixedWaitLine" d=""/>
+              </svg>
+            <div class="small-note">Lower queue means vehicles are clearing faster.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <details class="overview" open>
+        <summary>System Overview <span>Live decision context</span></summary>
+        <div class="overview-grid">
+          <div class="overview-item"><span>Congestion</span><strong id="overviewCongestion">High</strong></div>
+          <div class="overview-item"><span>Reason</span><strong id="overviewReason">Emergency priority</strong></div>
+          <div class="overview-item"><span>Wait reduction</span><strong id="overviewWait">75 units</strong></div>
+          <div class="overview-item"><span>Emergency</span><strong id="overviewEmergency">Green corridor active</strong></div>
+          <div class="overview-item"><span>Strategy</span><strong id="overviewStrategy">Serve East now</strong></div>
+        </div>
+      </details>
+    </main>
+  </div>
+
+  <script>
+    const steps = [
+      { shownStep: 1, green: "West", duration: "50s", congestion: "Severe", emergency: false, detected: 44, traffic: "assets/traffic-step-01.jpg", ai: "assets/ai-step-01.jpg", counts: { North: 1, East: 15, South: 3, West: 25 }, reason: "highest vehicle count", fixed: "North", aiQueue: 44, fixedQueue: 7, aiWait: 7, fixedWait: 7, savedWait: 0 },
+      { shownStep: 2, green: "West", duration: "50s", congestion: "Severe", emergency: false, detected: 34, traffic: "assets/traffic-step-02.jpg", ai: "assets/ai-step-02.jpg", counts: { North: 0, East: 11, South: 4, West: 19 }, reason: "highest vehicle count", fixed: "East", aiQueue: 34, fixedQueue: 15, aiWait: 22, fixedWait: 22, savedWait: 0 },
+      { shownStep: 3, green: "West", duration: "48s", congestion: "High", emergency: false, detected: 21, traffic: "assets/traffic-step-03.jpg", ai: "assets/ai-step-03.jpg", counts: { North: 0, East: 6, South: 3, West: 12 }, reason: "highest vehicle count", fixed: "South", aiQueue: 21, fixedQueue: 23, aiWait: 40, fixedWait: 45, savedWait: 5 },
+      { shownStep: 4, green: "West", duration: "48s", congestion: "High", emergency: false, detected: 30, traffic: "assets/traffic-step-04.jpg", ai: "assets/ai-step-04.jpg", counts: { North: 2, East: 11, South: 5, West: 12 }, reason: "highest vehicle count", fixed: "West", aiQueue: 30, fixedQueue: 35, aiWait: 65, fixedWait: 80, savedWait: 15 },
+      { shownStep: 5, green: "West", duration: "50s", congestion: "High", emergency: false, detected: 28, traffic: "assets/traffic-step-05.jpg", ai: "assets/ai-step-05.jpg", counts: { North: 2, East: 10, South: 3, West: 13 }, reason: "highest vehicle count", fixed: "North", aiQueue: 28, fixedQueue: 47, aiWait: 97, fixedWait: 127, savedWait: 30 },
+      { shownStep: 6, green: "West", duration: "50s", congestion: "High", emergency: false, detected: 30, traffic: "assets/traffic-step-06.jpg", ai: "assets/ai-step-06.jpg", counts: { North: 3, East: 11, South: 1, West: 15 }, reason: "highest vehicle count", fixed: "East", aiQueue: 30, fixedQueue: 57, aiWait: 134, fixedWait: 184, savedWait: 50 },
+      { shownStep: 7, green: "East", duration: "50s", congestion: "High", emergency: true, detected: 28, traffic: "assets/traffic-step-07.jpg", ai: "assets/ai-step-07.jpg", counts: { North: 2, East: 7, South: 5, West: 14 }, reason: "emergency vehicle priority", fixed: "South", aiQueue: 28, fixedQueue: 69, aiWait: 178, fixedWait: 253, savedWait: 75 },
+      { shownStep: 8, green: "East", duration: "50s", congestion: "Severe", emergency: true, detected: 35, traffic: "assets/traffic-step-08.jpg", ai: "assets/ai-step-08.jpg", counts: { North: 4, East: 14, South: 2, West: 15 }, reason: "emergency vehicle priority", fixed: "West", aiQueue: 35, fixedQueue: 81, aiWait: 229, fixedWait: 334, savedWait: 105 },
+      { shownStep: 9, green: "East", duration: "50s", congestion: "High", emergency: true, detected: 29, traffic: "assets/traffic-step-09.jpg", ai: "assets/ai-step-09.jpg", counts: { North: 1, East: 9, South: 2, West: 17 }, reason: "emergency vehicle priority", fixed: "North", aiQueue: 29, fixedQueue: 93, aiWait: 287, fixedWait: 427, savedWait: 140 },
+      { shownStep: 10, green: "West", duration: "48s", congestion: "High", emergency: false, detected: 20, traffic: "assets/traffic-step-10.jpg", ai: "assets/ai-step-10.jpg", counts: { North: 1, East: 6, South: 1, West: 12 }, reason: "highest vehicle count", fixed: "East", aiQueue: 20, fixedQueue: 104, aiWait: 351, fixedWait: 531, savedWait: 180 },
+      { shownStep: 11, green: "West", duration: "50s", congestion: "Severe", emergency: false, detected: 31, traffic: "assets/traffic-step-11.jpg", ai: "assets/ai-step-11.jpg", counts: { North: 2, East: 10, South: 3, West: 16 }, reason: "highest vehicle count", fixed: "South", aiQueue: 31, fixedQueue: 114, aiWait: 420, fixedWait: 645, savedWait: 225 },
+      { shownStep: 12, green: "East", duration: "45s", congestion: "High", emergency: false, detected: 25, traffic: "assets/traffic-step-12.jpg", ai: "assets/ai-step-12.jpg", counts: { North: 2, East: 11, South: 1, West: 11 }, reason: "highest vehicle count", fixed: "West", aiQueue: 25, fixedQueue: 125, aiWait: 495, fixedWait: 770, savedWait: 275 },
+      { shownStep: 13, green: "West", duration: "45s", congestion: "High", emergency: false, detected: 26, traffic: "assets/traffic-step-13.jpg", ai: "assets/ai-step-13.jpg", counts: { North: 3, East: 7, South: 5, West: 11 }, reason: "highest vehicle count", fixed: "North", aiQueue: 26, fixedQueue: 137, aiWait: 577, fixedWait: 907, savedWait: 330 },
+      { shownStep: 14, green: "West", duration: "42s", congestion: "High", emergency: false, detected: 22, traffic: "assets/traffic-step-14.jpg", ai: "assets/ai-step-14.jpg", counts: { North: 2, East: 9, South: 1, West: 10 }, reason: "highest vehicle count", fixed: "East", aiQueue: 22, fixedQueue: 149, aiWait: 666, fixedWait: 1056, savedWait: 390 },
+      { shownStep: 15, green: "West", duration: "50s", congestion: "High", emergency: false, detected: 25, traffic: "assets/traffic-step-15.jpg", ai: "assets/ai-step-15.jpg", counts: { North: 4, East: 6, South: 2, West: 13 }, reason: "highest vehicle count", fixed: "South", aiQueue: 25, fixedQueue: 161, aiWait: 762, fixedWait: 1217, savedWait: 455 },
+      { shownStep: 16, green: "West", duration: "50s", congestion: "Severe", emergency: false, detected: 34, traffic: "assets/traffic-step-16.jpg", ai: "assets/ai-step-16.jpg", counts: { North: 2, East: 5, South: 2, West: 25 }, reason: "highest vehicle count", fixed: "West", aiQueue: 34, fixedQueue: 173, aiWait: 865, fixedWait: 1390, savedWait: 525 }
+    ];
+    const colors = { Low: "#34d399", Moderate: "#fbbf24", High: "#fb923c", Severe: "#e11d48" };
+    let current = 6;
+    const $ = (id) => document.getElementById(id);
+
+    function render() {
+      const step = steps[current];
+      $("stepText").textContent = `Step ${step.shownStep}`;
+      $("stepRange").value = current;
+      $("greenMetric").textContent = step.green;
+      $("durationMetric").textContent = step.duration;
+      $("congestionMetric").textContent = step.congestion;
+      $("congestionPill").textContent = step.congestion;
+      $("congestionDot").style.setProperty("--dot", colors[step.congestion] || "#34d399");
+      $("trafficImage").src = step.traffic;
+      $("aiImage").src = step.ai;
+      $("detectedText").textContent = `Detected ${step.detected} vehicles in this frame.`;
+      $("statusBanner").className = `status-banner ${step.emergency ? "emergency-banner" : "normal-banner"}`;
+      $("statusBanner").textContent = step.emergency
+        ? "Emergency corridor active: ambulance lane has priority."
+        : "Adaptive control active: signal is serving the highest-pressure lane.";
+
+      const maxCount = Math.max(...Object.values(step.counts), 1);
+      $("laneRows").innerHTML = Object.entries(step.counts).map(([lane, count]) => {
+        const active = lane === step.green;
+        const pct = Math.max(2, Math.round((count / maxCount) * 100));
+        return `<div class="lane-row">
+          <div class="lane-top ${active ? "active" : ""}"><span>${lane} lane</span><strong>${count} vehicles${active ? " green" : ""}</strong></div>
+          <div class="bar"><span style="width:${pct}%"></span></div>
+        </div>`;
+      }).join("");
+
+      $("decisionText").innerHTML = `AI selected <strong>${step.green}</strong> for <strong>${step.duration.replace("s", " seconds")}</strong>.<br>
+        Reason: <strong>${step.reason}</strong>.<br>
+        Fixed timer would serve <strong>${step.fixed}</strong>.`;
+      updateRecommendation(step);
+      updateComparison(step);
+      $("overviewCongestion").textContent = step.congestion;
+      $("overviewReason").textContent = step.reason;
+      $("overviewWait").textContent = `${step.savedWait} units`;
+      $("overviewEmergency").textContent = step.emergency ? "Green corridor active" : "No emergency";
+      $("overviewStrategy").textContent = `Serve ${step.green} now`;
+    }
+
+    function updateRecommendation(step) {
+      const sortedLanes = Object.entries(step.counts).sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]));
+      const [lane, count] = sortedLanes[0];
+      $("recommendMain").textContent = `Recommended Lane: ${lane.toUpperCase()}`;
+      $("recommendSub").textContent = `${count} vehicles - Lowest traffic density detected`;
+    }
+
+    function updateComparison(step) {
+      const queueMax = Math.max(step.aiQueue, step.fixedQueue, 1);
+      $("aiQueueStat").textContent = `${step.aiQueue} vehicles`;
+      $("fixedQueueStat").textContent = `${step.fixedQueue} vehicles`;
+      $("gainStat").textContent = `${step.savedWait} units saved`;
+      $("aiQueueBarText").textContent = step.aiQueue;
+      $("fixedQueueBarText").textContent = step.fixedQueue;
+      $("aiQueueBar").style.width = `${Math.max(6, Math.round((step.aiQueue / queueMax) * 100))}%`;
+      $("fixedQueueBar").style.width = `${Math.max(6, Math.round((step.fixedQueue / queueMax) * 100))}%`;
+      $("queueInsight").textContent = step.emergency
+        ? "AI is holding a green corridor while still tracking total queue pressure."
+        : "AI is serving the strongest lane pressure instead of waiting for the fixed cycle.";
+
+      const visible = steps.slice(0, current + 1);
+      const maxWait = Math.max(...steps.map((item) => item.fixedWait), 1);
+      $("aiWaitLine").setAttribute("d", buildLinePath(visible.map((item) => item.aiWait), maxWait));
+      $("fixedWaitLine").setAttribute("d", buildLinePath(visible.map((item) => item.fixedWait), maxWait));
+    }
+
+    function buildLinePath(values, maxValue) {
+      const left = 28, right = 292, top = 22, bottom = 152;
+      if (values.length === 1) {
+        const y = bottom - (values[0] / maxValue) * (bottom - top);
+        return `M${left} ${y}L${left + 1} ${y}`;
+      }
+      return values.map((value, index) => {
+        const x = left + (index / (values.length - 1)) * (right - left);
+        const y = bottom - (value / maxValue) * (bottom - top);
+        return `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+      }).join("");
+    }
+
+    $("prevBtn").addEventListener("click", () => { current = Math.max(0, current - 1); render(); });
+    $("nextBtn").addEventListener("click", () => { current = Math.min(steps.length - 1, current + 1); render(); });
+    $("restartBtn").addEventListener("click", () => { current = 0; render(); });
+    $("stepRange").addEventListener("input", (event) => { current = Number(event.target.value); render(); });
+    render();
+  </script>
+</body>
+</html>
